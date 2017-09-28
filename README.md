@@ -1,8 +1,11 @@
 # randomwalk-bionetwork
+#randomwalk-bionetwork-multithread is the multithread version of the script, runnining parallel walkers depending on the number of cores of your processor.
+
 Starting from a specific disease, the user is allowed to command random walkers to explore a multi level network of their own input choosing and are returned an edgelist with the walked edges and their aggregate step count values.
 
 *Please pre-install required libraries in order to run this script.
 *Required libraries: igraph
+*Required libraries for multithread version: foreach, doParallel
 
 Input arguments:
 1. Starting Disease node (character string). Must be contained in the Disease-Gene-DisGeNET.txt. Selecting a starting disease is mandatory - no default value.
