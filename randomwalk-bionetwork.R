@@ -254,21 +254,13 @@ print("Graph ready!")
 dir.create(file.path(getwd(), "temp_results")) #for each walkers results
 filesToDelete<-paste(getwd(), "/temp_results/", list.files("temp_results"), sep="") #variable containing filenames of possible carbage in temp_results folder
 unlink(filesToDelete) #deleting leftovers in temp_results folder
-#Rprof("profiling.txt") #Profiling
 print('Starting Random Walks...')
 for (i in 1:walkers){
-#	ptm <- proc.time() #start execution timer
 	print(i)
 	results <- randomWalk() #no arguements, global variables (user's input) will be accessed
 	#print('Making Final Edgelist from Steps...')
 	makeFinalEdgeList(results$efn,results$rndStr)
 	rm(results) #memory flush
-	#print('Completed!')
-#	print(proc.time() - ptm) #print execution timer
-#	rm(ptm) #memory flush
 	gc() #garbage collector
 }
 aggregateWalkers() #create final output edgelist
-#rm(i) #memory flush
-#Rprof(NULL) #Profiling
-#summaryRprof("profiling.txt") #Profiling
