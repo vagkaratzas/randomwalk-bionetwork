@@ -1,30 +1,76 @@
 # randomwalk-bionetwork
+# UNDER CONSTRUCTION! TODO: add more stub networks
 #Starting from a specific disease, the user is allowed to command random walkers to explore a multi level network of their own input choosing and are returned an edgelist with the walked edges and their aggregate step count values.
+
+#Make sure Rscript is in the PATH environment variable and you have your input files in the current directory.
 
 #Please pre-install required libraries in order to run this script.
 #Required libraries: igraph
 
 #Input arguments:
 #1. starting disease node, string, must be contained in the Disease-Gene-DisGeNET.txt.
-#2. number of walkers, integer, default=100
-#3. number of steps per walker, integer, default=100
+#2. number of walkers, integer, default=1
+#3. number of steps per walker, integer, default=1000
 #4. restart alarm, integer, the walker restarts at the starting disease node after the designated number of steps is reached in the restart alarm, default=0
 #5. memory capacity, integer, remembers self and memory capcity-1 previous visited nodes, default=1
-#6. leviFlight, boolean, if TRUE each walker uses a cauchy distribution to decide the number of steps per round, default=FALSE
+#6. leviFlight, 0-1, if 1 each walker uses a cauchy distribution to decide the number of steps per round, default=0
+
+#Example: Rscript randomwalk-bionetwork.R "Idiopathic Pulmonary Fibrosis" 1 1000 50 2 0
+
 
 args = commandArgs(trailingOnly = TRUE) #allow use of args
-if (length(args) < 1) { #check if correct number of args
+if (length(args) == 0) { #check if correct number of args
 	stop("Need at least a starting disease node string as argument, as written in Disease-Gene-DisGeNET.txt", call.=FALSE) #if not disease name, throw error and stop
+} else if (length(args) == 1) {
+	# defaults
+	args[2] <- 1
+	args[3] <- 1000
+	args[4] <- 0
+	args[5] <- 1
+	args[6] <- 0
+} else if (length(args) == 2) {
+	args[3] <- 1000
+	args[4] <- 0
+	args[5] <- 1
+	args[6] <- 0
+} else if (length(args) == 3) {
+	args[4] <- 0
+	args[5] <- 1
+	args[6] <- 0
+} else if (length(args) == 4) {
+	args[5] <- 1
+	args[6] <- 0
+} else if (length(args) == 5) {
+	args[6] <- 0
 }
 
 #Random Walker Variable Values #to fix defaults if no arguments were given
 diseaseRestart <- args[1] #"Idiopathic Pulmonary Fibrosis" #Disease Restart point
-walkers <- args[2] #2 #number of walkers
-totalSteps <- args[3] #100 #Total Steps
-restartAlarm <- args[4] #10 #After how many steps to restart
-memoryCapacity <- args[5] #2 #remembers current node + memoryCapacity-1 previously visited nodes
-leviFlight <- args[6] #0 #0 or 1, simple walk or Levi Flight (Cauchy distribution for number of steps per round)
-
+walkers <- as.integer(args[2]) #1 #number of walkers
+if (walkers < 0) { #check if negative value for walkers
+	print("Number of walkers must be a positive number. Choosing default value = 1")
+	walkers <- 1
+}
+totalSteps <- as.integer(args[3]) #1000 #Total Steps
+if (totalSteps < 0) { #check if negative value for walkers
+	print("Number of total steps per walker must be a positive number. Choosing default value = 1000")
+	totalSteps <- 1000
+}
+restartAlarm <- as.integer(args[4]) #0 #After how many steps to restart
+if (restartAlarm < 0) { #check if negative value for walkers
+	print("Restart Alarm counter must be a positive number. Choosing default value = 0")
+	restartAlarm <- 0
+}
+memoryCapacity <- as.integer(args[5]) #1 #remembers current node + memoryCapacity-1 previously visited nodes
+if (memoryCapacity < 0) { #check if negative value for walkers
+	print("Memory capacity must be a positive number. Choosing default value = 1")
+	memoryCapacity <- 1
+}
+leviFlight <- as.integer(args[6]) #0 #0 or 1, simple walk or Levi Flight (Cauchy distribution for number of steps per round)
+if (leviFlight < 0) { #check if negative value for walkers
+	print("Levi Flight choice must be either 0 or 1. Choosing default value = 0", call.=FALSE)
+	leviFlight <- 0
+}
 
 ### Functions
 makeNetwork <- function(vectorOfFiles) { #function that creates the main graph out of the user's inputs for stub subnetworks
@@ -101,7 +147,7 @@ rwStep <- function(currentNode,memoryVector,memoryVectorIterator,fileConn) { #fu
 
 randomWalk <- function() {
 	randString <- randGenerator() #each walker will create his own steps and final edgelist files
-	edgesFilename <- paste("results/Steps_", randString, "_total", totalSteps, "_restart", restartAlarm, "_mem", memoryCapacity, "_levi", leviFlight, ".txt", sep="") #create unique edges filename with randstring and metadata
+	edgesFilename <- paste("temp_results/Steps_", randString, "_total", totalSteps, "_restart", restartAlarm, "_mem", memoryCapacity, "_levi", leviFlight, ".txt", sep="") #create unique edges filename with randstring and metadata
 	currentNode <- diseaseRestart #start at disease chosen by user
 	memoryVector <- vector(mode = "integer", length = 1) #initialization, if length remains 1, memory not used
 	if (memoryCapacity > 0) { #create memory vector if selected and place first element
@@ -127,7 +173,7 @@ randomWalk <- function() {
 }
 
 makeFinalEdgeList <- function(stepsFile, randStr) { #function that returns edgeist out of the total steps taken
-	expfile <- stepsFile #paste("results/", stepsFile, sep = "") #filename
+	expfile <- stepsFile #paste("temp_results/", stepsFile, sep = "") #filename
 	steps <- read.delim(expfile, FALSE, strip.white = TRUE, sep="\t") #read steps File
 	file.remove(stepsFile) #deleting steps' file
 	stepNodes <- cbind(as.character(steps[,1]), as.character(steps[,2])) #make sure edge names are characters
@@ -140,19 +186,21 @@ makeFinalEdgeList <- function(stepsFile, randStr) { #function that returns edgei
 	graphEdgeList[,3] <- E(g)$weight #calculate and put weights in 3rd column
 	graphEdgeList <- graphEdgeList[order(graphEdgeList[,3], decreasing = TRUE),] #order edges by decreasing weight
 	resultEdgelistFilename <- paste("SuperBioNetworkEdgeList_", randStr, "_total", totalSteps, "_restart", restartAlarm, "_mem", memoryCapacity, "_levi", leviFlight, ".txt", sep="") #create file name for Result EdgeList
-	expfile <- paste("results/", resultEdgelistFilename, sep = "")
+	expfile <- paste("temp_results/", resultEdgelistFilename, sep = "")
 	write.table(graphEdgeList, expfile, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
 	return(graphEdgeList)
 }
 
 aggregateWalkers <- function() {
-	edgelists <- list.files("results") #make a vector with all edgelists' filenames
-	aggregatedEdgeList <- read.delim(paste("results/", edgelists[1], sep = ""), header = FALSE, sep = "\t") #read first edgelist to initialize
-	for (i in 2:length(edgelists)){ #for the rest of the network files chosen by user (except first which is already read)
-		tempEdgelist <- read.delim(paste("results/", edgelists[i], sep = ""), header = FALSE, sep = "\t") #read next input edgelist
-		aggregatedEdgeList <- rbind(aggregatedEdgeList, tempEdgelist) #combine to main edgelist
+	edgelists <- list.files("temp_results") #make a vector with all edgelists' filenames
+	aggregatedEdgeList <- read.delim(paste("temp_results/", edgelists[1], sep = ""), header = FALSE, sep = "\t") #read first edgelist to initialize
+	if (length(edgelists) > 1) {
+		for (i in 2:length(edgelists)){ #for the rest of the network files chosen by user (except first which is already read)
+			tempEdgelist <- read.delim(paste("temp_results/", edgelists[i], sep = ""), header = FALSE, sep = "\t") #read next input edgelist
+			aggregatedEdgeList <- rbind(aggregatedEdgeList, tempEdgelist) #combine to main edgelist
+		}
 	}
-	filesToDelete<-paste(getwd(), "/results/", list.files("results"), sep="") #variable containing filenames of each walker's steps, to be deleted
+	filesToDelete<-paste(getwd(), "/temp_results/", list.files("temp_results"), sep="") #variable containing filenames of each walker's steps, to be deleted
 	unlink(filesToDelete) #deleting all step files
 	netNodes <- cbind(as.character(aggregatedEdgeList[,1]),as.character(aggregatedEdgeList[,2])) #make sure all nodes will be interpreted as strings
 	netNodes[is.na(netNodes)] <- "NA" #if value NA found, replace it with the string NA
@@ -190,9 +238,9 @@ if(!file.exists("Disease-Gene-DisGeNET.txt")){ #checking if folder contains the 
 }
 graph <- makeNetwork(networkFiles) #construct main Graph
 print("Graph ready!")
-dir.create(file.path(getwd(), "results")) #for each walkers results
-filesToDelete<-paste(getwd(), "/results/", list.files("results"), sep="") #variable containing filenames of possible carbage in results folder
-unlink(filesToDelete) #deleting leftovers in results file
+dir.create(file.path(getwd(), "temp_results")) #for each walkers results
+filesToDelete<-paste(getwd(), "/temp_results/", list.files("temp_results"), sep="") #variable containing filenames of possible carbage in temp_results folder
+unlink(filesToDelete) #deleting leftovers in temp_results folder
 #Rprof("profiling.txt") #Profiling
 print('Starting Random Walks...')
 for (i in 1:walkers){
