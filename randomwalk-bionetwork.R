@@ -17,61 +17,6 @@
 
 #Example: Rscript randomwalk-bionetwork.R "Idiopathic Pulmonary Fibrosis" 1 1000 50 2 0
 
-
-args = commandArgs(trailingOnly = TRUE) #allow use of args
-if (length(args) == 0) { #check if correct number of args
-	stop("Need at least a starting disease node string as argument, as written in Disease-Gene-DisGeNET.txt", call.=FALSE) #if not disease name, throw error and stop
-} else if (length(args) == 1) {
-	# defaults
-	args[2] <- 1
-	args[3] <- 1000
-	args[4] <- 0
-	args[5] <- 1
-	args[6] <- 0
-} else if (length(args) == 2) {
-	args[3] <- 1000
-	args[4] <- 0
-	args[5] <- 1
-	args[6] <- 0
-} else if (length(args) == 3) {
-	args[4] <- 0
-	args[5] <- 1
-	args[6] <- 0
-} else if (length(args) == 4) {
-	args[5] <- 1
-	args[6] <- 0
-} else if (length(args) == 5) {
-	args[6] <- 0
-}
-
-#Random Walker Variable Values
-diseaseRestart <- args[1] #"Idiopathic Pulmonary Fibrosis" #Disease Restart point
-walkers <- as.integer(args[2]) #1 #number of walkers
-if (walkers < 0) { #check if negative value for walkers
-	print("Number of walkers must be a positive number. Choosing default value = 1")
-	walkers <- 1
-}
-totalSteps <- as.integer(args[3]) #1000 #Total Steps
-if (totalSteps < 0) { #check if negative value for walkers
-	print("Number of total steps per walker must be a positive number. Choosing default value = 1000")
-	totalSteps <- 1000
-}
-restartAlarm <- as.integer(args[4]) #0 #After how many steps to restart
-if (restartAlarm < 0) { #check if negative value for walkers
-	print("Restart Alarm counter must be a positive number. Choosing default value = 0")
-	restartAlarm <- 0
-}
-memoryCapacity <- as.integer(args[5]) #1 #remembers current node + memoryCapacity-1 previously visited nodes
-if (memoryCapacity < 0) { #check if negative value for walkers
-	print("Memory capacity must be a positive number. Choosing default value = 1")
-	memoryCapacity <- 1
-}
-leviFlight <- as.integer(args[6]) #0 #0 or 1, simple walk or Levi Flight (Cauchy distribution for number of steps per round)
-if (leviFlight < 0) { #check if negative value for walkers
-	print("Levi Flight choice must be either 0 or 1. Choosing default value = 0", call.=FALSE)
-	leviFlight <- 0
-}
-
 ### Functions
 makeNetwork <- function(vectorOfFiles) { #function that creates the main graph out of the user's inputs for stub subnetworks
 	edgeList <- read.delim(vectorOfFiles[1], header = FALSE, sep = "\t") #read first default file
@@ -221,21 +166,87 @@ aggregateWalkers <- function() {
 	write.table(orderedGraphEdgeList, outfileName, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t") #write topRanked edges
 }
 
+### Main
+### Libraries
+library(igraph) #library for the main graph creation - edgelists (read and write)
 ### User Inputs
+args = commandArgs(trailingOnly = TRUE) #allow use of args
+if (length(args) == 0) { #check if correct number of args
+	stop("Need at least a starting disease node string as argument, as written in Disease-Gene-DisGeNET.txt", call.=FALSE) #if not disease name, throw error and stop
+} else if (length(args) == 1) {
+	# defaults
+	args[2] <- ""
+	args[3] <- 1
+	args[4] <- 1000
+	args[5] <- 0
+	args[6] <- 1
+	args[7] <- 0
+}else if (length(args) == 2) {
+	args[3] <- 1
+	args[4] <- 1000
+	args[5] <- 0
+	args[6] <- 1
+	args[7] <- 0
+} else if (length(args) == 3) {
+	args[4] <- 1000
+	args[5] <- 0
+	args[6] <- 1
+	args[7] <- 0
+} else if (length(args) == 4) {
+	args[5] <- 0
+	args[6] <- 1
+	args[7] <- 0
+} else if (length(args) == 5) {
+	args[6] <- 1
+	args[7] <- 0
+} else if (length(args) == 6) {
+	args[7] <- 0
+}
+
+#Random Walker Variable Values
+diseaseRestart <- args[1] #"Idiopathic Pulmonary Fibrosis" #Disease Restart point
 #Stub NetWork
 networkFiles <- vector(mode="character") #initialization of vector with file names (edgelists) that will be iterated to create the main body of the SuperNetWork (graph)
 networkFiles <- append(networkFiles, "Disease-Gene-DisGeNET.txt") #Default Network. Disease-Gene Edgelist from DisGeNET Curated Database
-#networkFiles <- append(networkFiles, "ReactomePathways_Genes_Edgelist.txt") #Pathway-Gene (and additional molecules at the moment) from Reactome Pathways Gene Set
-#networkFiles <- append(networkFiles, "DGIdb-Gene-Drug.txt") #Drug-Gene (multiple interaction types) from DrugGeneInteraction database (DGIdb)
-
-### Libraries
-library(igraph) #library for the main graph creation - edgelists (read and write)
-
-### Main
-print("Creating SuperBioNetwork...")
 if(!file.exists("Disease-Gene-DisGeNET.txt")){ #checking if folder contains the subnetworks in the form of edgelists
 		stop("Make sure you have downloaded the edgelist text files in the current directory", call.=FALSE) #need edgelists text files in the same directory
 }
+if (grepl("pathway", args[2])){
+	networkFiles <- append(networkFiles, "Pathway_Gene_Reactome.txt") #Pathway-Gene (and additional molecules at the moment) from Reactome Pathways Gene Set
+	print("Pathways will be added to the bionetwork.")
+}
+if (grepl("drug", args[2])){
+	networkFiles <- append(networkFiles, "Drug-Gene-DGIdb.txt") #Drug-Gene (multiple interaction types) from DrugGeneInteraction database (DGIdb)
+	print("Drugs will be added to the bionetwork.")
+}
+walkers <- as.integer(args[3]) #1 #number of walkers
+if (walkers < 0) { #check if negative value for walkers
+	print("Number of walkers must be a positive number. Choosing default value = 1")
+	walkers <- 1
+}
+totalSteps <- as.integer(args[4]) #1000 #Total Steps
+if (totalSteps < 0) { #check if negative value for walkers
+	print("Number of total steps per walker must be a positive number. Choosing default value = 1000")
+	totalSteps <- 1000
+}
+restartAlarm <- as.integer(args[5]) #0 #After how many steps to restart
+if (restartAlarm < 0) { #check if negative value for walkers
+	print("Restart Alarm counter must be a positive number. Choosing default value = 0")
+	restartAlarm <- 0
+}
+memoryCapacity <- as.integer(args[6]) #1 #remembers current node + memoryCapacity-1 previously visited nodes
+if (memoryCapacity < 0) { #check if negative value for walkers
+	print("Memory capacity must be a positive number. Choosing default value = 1")
+	memoryCapacity <- 1
+}
+leviFlight <- as.integer(args[7]) #0 #0 or 1, simple walk or Levi Flight (Cauchy distribution for number of steps per round)
+if (leviFlight < 0) { #check if negative value for walkers
+	print("Levi Flight choice must be either 0 or 1. Choosing default value = 0", call.=FALSE)
+	leviFlight <- 0
+}
+
+#Execution
+print("Creating SuperBioNetwork...")
 graph <- makeNetwork(networkFiles) #construct main Graph
 print("Graph ready!")
 dir.create(file.path(getwd(), "temp_results")) #for each walkers results
