@@ -1,5 +1,5 @@
 # randomwalk-bionetwork
-#randomwalk-bionetwork-multithread is the multithread version of the script, runnining parallel walkers depending on the number of cores of your processor.
+#randomwalk-bionetwork-multithread is the multithread version of the script, runnining parallel walkers depending on the number of cores of your processor and greatly reducing execution times.
 
 Starting from a specific disease, the user is allowed to command random walkers to explore a multi level network of their own input choosing and are returned an edgelist with the walked edges and their aggregate step count values.
 
