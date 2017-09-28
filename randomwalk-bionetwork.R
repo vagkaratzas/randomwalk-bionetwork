@@ -44,7 +44,7 @@ if (length(args) == 0) { #check if correct number of args
 	args[6] <- 0
 }
 
-#Random Walker Variable Values #to fix defaults if no arguments were given
+#Random Walker Variable Values
 diseaseRestart <- args[1] #"Idiopathic Pulmonary Fibrosis" #Disease Restart point
 walkers <- as.integer(args[2]) #1 #number of walkers
 if (walkers < 0) { #check if negative value for walkers
