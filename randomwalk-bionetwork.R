@@ -75,7 +75,7 @@ rwStep <- function(currentNode,memoryVector,memoryVectorIterator,fileConn) { #fu
 			else {
 				#print("###Walker Trapped! Restarting at input Disease.###")
 				#print(currentNode)
-				cat(sprintf("%s\t%s\t1\n", currentNode, diseaseRestart), file = fileConn) #PROFILING
+				cat(sprintf("%s\t%s\t1\n", currentNode, diseaseRestart), file = fileConn)
 				memResult <- memoryCheck(memoryVector, memoryVectorIterator, nodeIndex) #put starting disease in memory again, if trapped and decided to restart there
 				memoryVector <- memResult$memV
 				memoryVectorIterator <- memResult$memVI
@@ -88,7 +88,7 @@ rwStep <- function(currentNode,memoryVector,memoryVectorIterator,fileConn) { #fu
 		memoryVector <- memResult$memV
 		memoryVectorIterator <- memResult$memVI
 	}#endif
-	cat(sprintf("%s\t%s\t1\n", currentNode, iteratingNode), file = fileConn) #PROFILING
+	cat(sprintf("%s\t%s\t1\n", currentNode, iteratingNode), file = fileConn)
 	return(list(itn = iteratingNode, mv = memoryVector, mvi = memoryVectorIterator))
 }
 
@@ -103,7 +103,7 @@ randomWalk <- function() {
 		memoryVectorIterator <- 1 #will be carried to rwStep together with the vector in order to correctly overwrite oldest nodes
 	}
 	restartTimer <- 0 #initialize restart counter, will restart after restartAlarm steps
-	fileConn<-file(edgesFilename, "a") #PROFILING	,a for append
+	fileConn<-file(edgesFilename, "a") #a for append
 	for(i in 1:totalSteps){
 		if (restartTimer==restartAlarm){ #if time to restart
 			currentNode <- diseaseRestart #hops to input Disease node without creating an edge and without counting this as a step
@@ -115,7 +115,7 @@ randomWalk <- function() {
 		memoryVectorIterator <- result$mvi
 		restartTimer <- restartTimer + 1
 	}
-	close(fileConn) #PROFILING
+	close(fileConn) #closing connection
 	return(list(efn = edgesFilename, rndStr = randString))
 }
 
